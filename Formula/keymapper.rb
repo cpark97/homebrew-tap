@@ -1,0 +1,41 @@
+class Keymapper < Formula
+  desc "Cross-platform context-aware keyremapper"
+  homepage "https://github.com/houmain/keymapper"
+  url "https://github.com/houmain/keymapper.git", tag: "5.8.1", revision: "3c30c151cb7648a0e196b6c06ef1725cb8b0b2e0"
+  license "GPL-3.0-only"
+
+  depends_on "cmake" => :build
+  on_linux do
+    depends_on "dbus"
+  end
+
+  def install
+    # Disables Homebrew's FetchContent trapping.
+    args = std_cmake_args
+    args += %W[
+      -DHOMEBREW_ALLOW_FETCHCONTENT=ON
+    ]
+
+    system "cmake", "-B", "build", *args
+    system "cmake", "--build", "build", "-j", "4"
+    system "cmake", "--install", "build"
+  end
+
+  def caveats
+    if OS.mac?
+      <<~EOS
+      To add keymapperd and keymapper to the launchd daemons/agents call:
+      `sudo keymapper-launchd add`
+      
+      To remove them call:
+      `sudo keymapper-launchd remove`
+      EOS
+    end
+  end
+
+  test do
+    system "echo", "'A >> B' > #{bin}/test.conf"
+    system "#{bin}/keymapper", "--check", "--config", "test.conf"
+    system "#{bin}/keymapperd", "--help"
+  end
+end
